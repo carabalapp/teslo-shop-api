@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
 import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from '../common/dtos/pagination.dto';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { Product } from './entities/product.entity';
 import { isUUID } from 'class-validator';
 import { ProductImage } from './entities';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -22,12 +23,13 @@ export class ProductsService {
     private readonly dataSource: DataSource
   ) { }
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     try {
       const { images = [], ...productDetails } = createProductDto
       const product = await this.productRepository.create({
         ...productDetails,
-        images: images.map(image => this.productImageRepository.create({ url: image }))
+        images: images.map(image => this.productImageRepository.create({ url: image })),
+        user
       })
       await this.productRepository.save(product)
 
@@ -102,11 +104,12 @@ export class ProductsService {
     return { ...product, images: product.images.map(image => image.url) }
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
     const { images, ...toUpdate } = updateProductDto // aqui saco las imagenes que viene de toUpdate, y el resto "..." lo representamos con el rest operator que son esos 3 puntitos, lo llamaremos toUpdate
     const product = await this.productRepository.preload({
       id: id, // Con la funcion preload lo que hacemos es que va a buscar con la primera propiedad, es decir por id en este caso
       ...toUpdate, // Con esto vamos a decir que prepare el objeto que consiga y lo pongamos tal cual como lo que nos viene por el body
+      user
     });
 
     if (!product) throw new NotFoundException(`Not found records with this param ${id}`)

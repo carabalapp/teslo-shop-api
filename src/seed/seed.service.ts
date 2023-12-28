@@ -8,13 +8,13 @@ export class SeedService {
     private readonly productService: ProductsService
   ) { }
 
-  async runSeed() {
+  async runSeed(user) {
 
-    this.insertNewProducts();
+    this.insertNewProducts(user);
     return `Seed executed`;
   }
 
-  private async insertNewProducts() {
+  private async insertNewProducts(user) {
     await this.productService.deleteAllProducts()
 
     const products = initialData.products;
@@ -22,7 +22,7 @@ export class SeedService {
     const insertPromises = [];
 
     products.forEach(product => {
-      insertPromises.push(this.productService.create(product)) // Puede parecer que inserta de una vez, pero es una promesa no resuelta lo que retorna
+      insertPromises.push(this.productService.create(product,user)) // Puede parecer que inserta de una vez, pero es una promesa no resuelta lo que retorna
     });
 
     await Promise.all(insertPromises); // Aqui si resuelve todas las promesas y empieza a insertar y si almenos una falla entonces no se cumplen todas.
